@@ -2,7 +2,6 @@ package GPN.Intelligence.Cup.route;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.cxf.common.message.CxfConstants;
@@ -22,6 +21,8 @@ public class SoapToRest extends RouteBuilder {
     public void configure() {
 
         getCamelContext().setStreamCaching(true);
+        getCamelContext().getStreamCachingStrategy().setSpoolThreshold(64 * 1024);
+        getCamelContext().getStreamCachingStrategy().setBufferSize(16 * 1024);
 
         onException(ArithmeticException.class).handled(true)
                 .process(exchange -> {
@@ -31,7 +32,7 @@ public class SoapToRest extends RouteBuilder {
                 })
                 .end();
 
-        onException(IllegalArgumentException.class).handled(true)
+        onException(Exception.class).handled(true)
                 .process(exchange -> {
                     exchange.getIn().setBody("{\"error\": \"Bad Request}\"");
                     exchange.getIn().setHeader(Exchange.CONTENT_TYPE, "application/json");
@@ -40,6 +41,7 @@ public class SoapToRest extends RouteBuilder {
                 .end();
 
         from("direct:add")
+                .streamCaching()
                 .removeHeaders("CamelHttp*")
                 .process(exchange -> {
                     Add add = exchange.getIn().getBody(Add.class);
@@ -69,6 +71,7 @@ public class SoapToRest extends RouteBuilder {
 
 
         from("direct:divide")
+                .streamCaching()
                 .removeHeaders("CamelHttp*")
                 .process(exchange -> {
                     Divide div = exchange.getIn().getBody(Divide.class);
@@ -86,7 +89,7 @@ public class SoapToRest extends RouteBuilder {
                 .setHeader(CxfConstants.OPERATION_NAME, constant("{{endpoint.operation.divide}}"))
                 .setHeader(CxfConstants.OPERATION_NAMESPACE, constant("{{endpoint.namespace}}"))
                 .to("cxf:bean:cxfCalculator")
-                .process(exchange -> {
+                .process(exchange ->  {
                     MessageContentsList response = (MessageContentsList) exchange.getIn().getBody();
                     DivideResponse r = new DivideResponse();
                     r.setDivideResult((Integer) response.get(0));
@@ -102,6 +105,7 @@ public class SoapToRest extends RouteBuilder {
                 .to("mock:output");
 
         from("direct:multiply")
+                .streamCaching()
                 .removeHeaders("CamelHttp*")
                 .process(exchange -> {
                     Multiply mult = exchange.getIn().getBody(Multiply.class);
@@ -129,6 +133,7 @@ public class SoapToRest extends RouteBuilder {
                 .to("mock:output");
 
         from("direct:subtract")
+                .streamCaching()
                 .removeHeaders("CamelHttp*")
                 .process(exchange -> {
                     Subtract sub = exchange.getIn().getBody(Subtract.class);
