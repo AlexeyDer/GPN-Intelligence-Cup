@@ -20,6 +20,8 @@ or
 ```
 java -jar target/GPN-Intelligence-Cup-1.0.jar
 ```
+**NOTE:** 
+* If you want run from IntelliJ IDEA then you need Mark directory *target/generated-sources/cxf* as **SOURCE ROOT** in the project.
 ### Rest API
 Example of **POST** requests to the **Rest-Adapter**:
 * Add
